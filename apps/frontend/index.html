@@ -437,7 +437,8 @@
         mediaRecorder.start();
         isRecording = true;
         micBtn.classList.add("recording");
-        statusLine.textContent = "Đang ghi âm... bấm lại để dừng.";
+        sendBtn.disabled = true;
+        statusLine.textContent = "Đang ghi âm... bấm lại vào icon 🎤 để dừng.";
       })
       .catch(function () {
         statusLine.textContent = "Không truy cập được micro. Sếp kiểm tra quyền trình duyệt giúp em nhé.";
