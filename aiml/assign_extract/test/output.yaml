@@ -1,0 +1,66 @@
+- input:
+    text: Chào bạn, hôm nay khoẻ không?
+  output:
+    type: chitchat
+    reply: Em vẫn ổn và sẵn sàng hỗ trợ sếp. Xin lỗi sếp, em chỉ là bot giao việc
+      nên không phù hợp để tán gẫu hay trò chuyện chung. Nếu hôm nay sếp có đầu việc
+      nào cần hoàn thành, cứ mô tả để em hỗ trợ trích xuất nhé.
+- input:
+    text: Ê, cuối tuần này có phim gì hay không nhỉ?
+  output:
+    type: chitchat
+    reply: Em chưa có dữ liệu lịch phim cuối tuần này để gợi ý chính xác cho sếp.
+      Em xin lỗi vì em chỉ là bot giao việc, không phải để tán gẫu hay trò chuyện
+      chung. Nếu hôm nay sếp có đầu việc nào cần hoàn thành, cứ mô tả để em hỗ trợ
+      trích xuất nhé.
+- input:
+    text: 'Hôm nay có 3 đầu việc: viết báo cáo tuần, deploy bản staging, review PR
+      cho module thanh toán. An thực hiện viết báo cáo, Bình vừa giám sát vừa thực
+      hiện deploy, còn review PR thì Dũng thực hiện, Chi kiểm định, cần xong trước
+      thứ 6.
+
+      '
+  output:
+    type: task_extraction
+    tasks:
+    - content: Viết báo cáo tuần
+      deadline: null
+      participants:
+      - name: An
+        roles:
+        - Thực hiện
+    - content: Deploy bản staging
+      deadline: null
+      participants:
+      - name: Bình
+        roles:
+        - Giám sát
+        - Thực hiện
+    - content: Review PR cho module thanh toán
+      deadline: trước thứ 6
+      participants:
+      - name: Dũng
+        roles:
+        - Thực hiện
+      - name: Chi
+        roles:
+        - Kiểm định
+- input:
+    text: Mai Lan phụ trách thiết kế banner quảng cáo cho chiến dịch mới, cần xong
+      trước thứ 3 tuần sau.
+  output:
+    type: task_extraction
+    tasks:
+    - content: Thiết kế banner quảng cáo cho chiến dịch mới
+      deadline: trước thứ 3 tuần sau
+      participants:
+      - name: Mai Lan
+        roles:
+        - Thực hiện
+- input:
+    text: Cảm ơn cả team đã làm việc chăm chỉ tuần này nhé!
+  output:
+    type: chitchat
+    reply: Dạ, em ghi nhận lời cảm ơn của sếp dành cho team ạ. Em xin lỗi vì em chỉ
+      là bot giao việc, không phải trợ lý để tán gẫu chung. Nếu hôm nay sếp có đầu
+      việc nào cần hoàn thành, cứ mô tả để em hỗ trợ trích xuất nhé.

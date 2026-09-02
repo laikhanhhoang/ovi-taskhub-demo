@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Trợ lý giao việc</title>
+<style>
+  :root {
+    --bg: #1a1a18;
+    --bg-panel: #242422;
+    --bg-input: #2c2c29;
+    --border: #3a3a36;
+    --text: #ece9e2;
+    --text-dim: #9a9690;
+    --accent: #d97757;
+    --accent-dim: #a85c42;
+    --danger: #e05a5a;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  #app {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .view {
+    width: 100%;
+    max-width: 640px;
+  }
+
+  [hidden] { display: none !important; }
+
+  /* ---- Input view ---- */
+
+  #greeting {
+    font-size: 32px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 28px;
+    color: var(--text);
+  }
+
+  #input-box {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 10px 10px 10px 20px;
+  }
+
+  #text-input {
+    flex: 1;
+    resize: none;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 15px;
+    font-family: inherit;
+    line-height: 1.5;
+    max-height: 160px;
+    padding: 8px 0;
+  }
+
+  #text-input::placeholder { color: var(--text-dim); }
+
+  .round-btn {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg-panel);
+    color: var(--text);
+    font-size: 17px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+
+  .round-btn:hover { background: var(--border); }
+
+  .round-btn:disabled { opacity: 0.4; cursor: default; }
+
+  #mic-btn.recording {
+    background: var(--danger);
+    color: #fff;
+    animation: pulse 1.2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(224, 90, 90, 0.5); }
+    50% { box-shadow: 0 0 0 8px rgba(224, 90, 90, 0); }
+  }
+
+  #send-btn { background: var(--accent); color: #fff; }
+  #send-btn:hover { background: var(--accent-dim); }
+
+  #status-line {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-top: 12px;
+    min-height: 18px;
+  }
+
+  /* ---- Result view ---- */
+
+  #result-box {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  #result-intro {
+    margin: 0 0 14px;
+    font-size: 15px;
+  }
+
+  #chitchat-bubble {
+    font-size: 15px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+
+  #error-bubble {
+    font-size: 14px;
+    color: var(--danger);
+    white-space: pre-wrap;
+  }
+
+  #view-toggle {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .toggle-btn {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .toggle-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  #json-view {
+    background: #141412;
+    border-radius: 10px;
+    padding: 14px;
+    overflow-x: auto;
+    font-size: 12.5px;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .task-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+
+  .task-card:last-child { margin-bottom: 0; }
+
+  .task-title { font-weight: 600; margin-bottom: 4px; }
+
+  .task-deadline { font-size: 13px; color: var(--text-dim); margin-bottom: 8px; }
+
+  .task-participants {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 13.5px;
+  }
+
+  .task-participants li { margin-bottom: 2px; }
+
+  #reset-row {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <div id="input-view" class="view">
+    <div id="greeting">Chào sếp! Hôm nay có đầu việc gì không ạ ? </div>
+    <div id="input-box">
+      <textarea id="text-input" rows="1" placeholder="Nhắn cho em..."></textarea>
+      <button id="mic-btn" class="round-btn" title="Ghi âm">🎤</button>
+      <button id="send-btn" class="round-btn" title="Gửi">➤</button>
+    </div>
+    <div id="status-line"></div>
+  </div>
+
+  <div id="result-view" class="view" hidden>
+    <div id="result-box">
+      <div id="chitchat-block" hidden>
+        <div id="chitchat-bubble"></div>
+      </div>
+
+      <div id="task-block" hidden>
+        <p id="result-intro">Dạ, em đã ghi nhận các đầu việc như sau:</p>
+        <div id="view-toggle">
+          <button class="toggle-btn" data-view="markdown">Markdown</button>
+          <button class="toggle-btn" data-view="json">JSON</button>
+        </div>
+        <pre id="json-view" hidden></pre>
+        <div id="markdown-view"></div>
+      </div>
+
+      <div id="error-block" hidden>
+        <div id="error-bubble"></div>
+      </div>
+    </div>
+    <div id="reset-row">
+      <button id="reset-btn" class="round-btn" title="Bắt đầu lại">↺</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var inputView = document.getElementById("input-view");
+  var resultView = document.getElementById("result-view");
+  var textInput = document.getElementById("text-input");
+  var micBtn = document.getElementById("mic-btn");
+  var sendBtn = document.getElementById("send-btn");
+  var statusLine = document.getElementById("status-line");
+
+  var chitchatBlock = document.getElementById("chitchat-block");
+  var chitchatBubble = document.getElementById("chitchat-bubble");
+  var taskBlock = document.getElementById("task-block");
+  var jsonView = document.getElementById("json-view");
+  var markdownView = document.getElementById("markdown-view");
+  var errorBlock = document.getElementById("error-block");
+  var errorBubble = document.getElementById("error-bubble");
+  var resetBtn = document.getElementById("reset-btn");
+  var toggleBtns = document.querySelectorAll(".toggle-btn");
+
+  var mediaRecorder = null;
+  var audioChunks = [];
+  var isRecording = false;
+  var isBusy = false;
+  var savedSelectionStart = 0;
+  var savedSelectionEnd = 0;
+
+  textInput.addEventListener("input", function () {
+    textInput.style.height = "auto";
+    textInput.style.height = Math.min(textInput.scrollHeight, 160) + "px";
+  });
+
+  textInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  });
+
+  sendBtn.addEventListener("click", send);
+  micBtn.addEventListener("click", toggleRecording);
+  resetBtn.addEventListener("click", reset);
+
+  toggleBtns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      toggleBtns.forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      var view = btn.dataset.view;
+      jsonView.hidden = view !== "json";
+      markdownView.hidden = view !== "markdown";
+    });
+  });
+
+  function setBusy(busy, message) {
+    isBusy = busy;
+    sendBtn.disabled = busy;
+    micBtn.disabled = busy;
+    statusLine.textContent = message || "";
+  }
+
+  function send() {
+    if (isBusy) return;
+    var text = textInput.value.trim();
+    if (!text) return;
+
+    setBusy(true, "Đang xử lý...");
+
+    fetch("/assign-extract", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: text }),
+    })
+      .then(function (res) {
+        return res.json().then(function (data) {
+          if (!res.ok) throw new Error(data.detail || "Đã có lỗi xảy ra");
+          return data;
+        });
+      })
+      .then(showResult)
+      .catch(function (err) { showError(err.message); })
+      .finally(function () { setBusy(false, ""); });
+  }
+
+  function showResult(data) {
+    inputView.hidden = true;
+    resultView.hidden = false;
+    chitchatBlock.hidden = true;
+    taskBlock.hidden = true;
+    errorBlock.hidden = true;
+
+    if (data.type === "chitchat") {
+      chitchatBlock.hidden = false;
+      chitchatBubble.textContent = data.reply;
+    } else if (data.type === "task_extraction") {
+      taskBlock.hidden = false;
+      renderTasks(data.tasks);
+      toggleBtns.forEach(function (b) { b.classList.remove("active"); });
+      toggleBtns[0].classList.add("active");
+      jsonView.hidden = true;
+      markdownView.hidden = false;
+    } else {
+      showError("Kết quả không đúng định dạng mong đợi.");
+    }
+  }
+
+  function renderTasks(tasks) {
+    jsonView.textContent = JSON.stringify(tasks, null, 2);
+
+    markdownView.innerHTML = "";
+    tasks.forEach(function (task) {
+      var card = document.createElement("div");
+      card.className = "task-card";
+
+      var title = document.createElement("div");
+      title.className = "task-title";
+      title.textContent = "📌 " + task.content;
+      card.appendChild(title);
+
+      var deadline = document.createElement("div");
+      deadline.className = "task-deadline";
+      deadline.textContent = "⏰ Deadline: " + (task.deadline || "Không có");
+      card.appendChild(deadline);
+
+      var list = document.createElement("ul");
+      list.className = "task-participants";
+      task.participants.forEach(function (p) {
+        var li = document.createElement("li");
+        li.textContent = p.name + " — " + p.roles.join(", ");
+        list.appendChild(li);
+      });
+      card.appendChild(list);
+
+      markdownView.appendChild(card);
+    });
+  }
+
+  function showError(message) {
+    inputView.hidden = true;
+    resultView.hidden = false;
+    chitchatBlock.hidden = true;
+    taskBlock.hidden = true;
+    errorBlock.hidden = false;
+    errorBubble.textContent = "Sếp thử lại giúp em nhé. Lỗi: " + message;
+  }
+
+  function reset() {
+    resultView.hidden = true;
+    inputView.hidden = false;
+    textInput.value = "";
+    textInput.style.height = "auto";
+    statusLine.textContent = "";
+    textInput.focus();
+  }
+
+  function toggleRecording() {
+    if (isBusy) return;
+    if (isRecording) {
+      mediaRecorder.stop();
+      return;
+    }
+
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(function (stream) {
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = function (e) {
+          if (e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = function () {
+          stream.getTracks().forEach(function (t) { t.stop(); });
+          isRecording = false;
+          micBtn.classList.remove("recording");
+          savedSelectionStart = textInput.selectionStart;
+          savedSelectionEnd = textInput.selectionEnd;
+          transcribeRecording();
+        };
+
+        mediaRecorder.start();
+        isRecording = true;
+        micBtn.classList.add("recording");
+        statusLine.textContent = "Đang ghi âm... bấm lại để dừng.";
+      })
+      .catch(function () {
+        statusLine.textContent = "Không truy cập được micro. Sếp kiểm tra quyền trình duyệt giúp em nhé.";
+      });
+  }
+
+  function transcribeRecording() {
+    var blob = new Blob(audioChunks, { type: "audio/webm" });
+    var formData = new FormData();
+    formData.append("file", blob, "recording.webm");
+
+    setBusy(true, "Đang nhận diện giọng nói...");
+
+    fetch("/stt/transcribe", { method: "POST", body: formData })
+      .then(function (res) {
+        return res.json().then(function (data) {
+          if (!res.ok) throw new Error(data.detail || "Nhận diện giọng nói thất bại");
+          return data;
+        });
+      })
+      .then(function (data) {
+        insertAtSavedCursor(data.text);
+        setBusy(false, "");
+      })
+      .catch(function (err) { setBusy(false, "Lỗi: " + err.message); });
+  }
+
+  function insertAtSavedCursor(text) {
+    var value = textInput.value;
+    var before = value.slice(0, savedSelectionStart);
+    var after = value.slice(savedSelectionEnd);
+    var leadingSpace = before.length > 0 && !/\s$/.test(before) ? " " : "";
+    var trailingSpace = after.length > 0 && !/^\s/.test(after) ? " " : "";
+    var insert = leadingSpace + text + trailingSpace;
+
+    textInput.value = before + insert + after;
+    textInput.dispatchEvent(new Event("input"));
+    textInput.focus();
+    var cursorPos = before.length + insert.length;
+    textInput.setSelectionRange(cursorPos, cursorPos);
+  }
+})();
+</script>
+
+</body>
+</html>
