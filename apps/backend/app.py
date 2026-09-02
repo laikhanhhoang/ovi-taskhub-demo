@@ -84,6 +84,11 @@ app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
 
 
 if __name__ == "__main__":
+    import os
+
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    # host="0.0.0.0" de Render (hoac may host khac) truy cap duoc tu ngoai --
+    # van chay binh thuong khi test local qua http://127.0.0.1:8000/. Render
+    # tu cap port qua bien PORT, fallback 8000 khi chay local khong co bien nay.
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
