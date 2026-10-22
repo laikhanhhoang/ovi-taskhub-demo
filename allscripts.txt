@@ -1,0 +1,3 @@
+# TEST LLAMA SERVER
+python test/call_hlk_llamasrv.py "Câu hỏi test"
+python test/call_hlk_llamasrv.py          # dùng câu mặc định
